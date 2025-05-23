@@ -116,7 +116,7 @@ func main() {
 	if err != nil {
 		die(1, err)
 	}
-	fmt.Println("KBps:", x/1024)
+	fmt.Println(x/1024, "KBps")
 }
 
 func die(exitcode int, err error) {
