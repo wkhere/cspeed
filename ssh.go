@@ -62,6 +62,7 @@ loop:
 
 		case p := <-done:
 			if !p.Success() {
+				// todo: handle case of ssh external kill (sshErr is empty then)
 				return 0, errSSHProc{strings.TrimRight(sshErr.String(), "\n\r")}
 			}
 			break loop
