@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -62,13 +62,13 @@ loop:
 
 		case p := <-done:
 			if !p.Success() {
-				return 0, fmt.Errorf(strings.TrimRight(sshErr.String(), "\n\r"))
+				return 0, errSSHProc{strings.TrimRight(sshErr.String(), "\n\r")}
 			}
 			break loop
 
 		case <-graceEnd:
 			c2.Process.Kill()
-			return 0, fmt.Errorf("ssh: timeout")
+			return 0, errSSHTimeout
 		}
 	}
 
@@ -80,6 +80,12 @@ loop:
 }
 
 var (
-	rxBps    = regexp.MustCompile(`\((\d+) bytes\/sec\)`)
-	errNoBps = fmt.Errorf("Bps diagnostics not found")
+	rxBps = regexp.MustCompile(`\((\d+) bytes\/sec\)`)
+
+	errNoBps      = errors.New("Bps diagnostics not found")
+	errSSHTimeout = errors.New("ssh: timeout")
 )
+
+type errSSHProc struct{ string }
+
+func (e errSSHProc) Error() string { return e.string }
