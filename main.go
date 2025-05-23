@@ -16,9 +16,15 @@ type pargs struct {
 
 func defaults() pargs { return pargs{dt: 5 * time.Second} }
 
-func parseArgs(args []string) (a pargs, err error) {
-	const usage = "usage: cspeed [-dDT|--duration=DT] HOST [HOSTn...]"
+func usage() {
+	a := defaults()
+	fmt.Printf(
+		"usage: cspeed [-dDT|--duration=DT (default %[1]s)] HOST [HOSTn...]",
+		a.dt,
+	)
+}
 
+func parseArgs(args []string) (a pargs, err error) {
 	a = defaults()
 
 	rest := make([]string, 0, len(args))
@@ -32,7 +38,7 @@ flags:
 			// ok
 
 		case arg == "-h", arg == "--help":
-			a.help = func() { fmt.Println(usage) }
+			a.help = usage
 			return a, nil
 
 		case arg == "--":
