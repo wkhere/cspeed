@@ -11,10 +11,10 @@ import (
 	"time"
 )
 
-func sshSend(p *pargs) (nBps int64, err error) {
+func sshSend(host string, dt time.Duration) (nBps int64, err error) {
 
 	c1 := exec.Command("dd", "if=/dev/urandom")
-	c2 := exec.Command("ssh", p.host, "cat - >/dev/null")
+	c2 := exec.Command("ssh", host, "cat - >/dev/null")
 
 	pr, pw := io.Pipe()
 	var (
@@ -48,7 +48,7 @@ func sshSend(p *pargs) (nBps int64, err error) {
 	}()
 
 	var (
-		stop     = time.NewTimer(p.dt)
+		stop     = time.NewTimer(dt)
 		graceEnd = make(chan struct{})
 	)
 loop:

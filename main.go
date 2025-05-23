@@ -70,7 +70,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	x, err := sshSend(&a)
+	x, err := sshSend(a.host, a.dt)
 	if err != nil {
 		die(1, err)
 	}
