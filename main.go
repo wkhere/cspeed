@@ -19,7 +19,7 @@ type pargs struct {
 
 func defaults() pargs { return pargs{dt: 5 * time.Second} }
 
-func run(p *pargs) (err error) {
+func run(p *pargs) (nBps int64, err error) {
 	c1 := exec.Command("dd", "if=/dev/urandom")
 	c2 := exec.Command("ssh", p.host, "cat - >/dev/null")
 
@@ -34,11 +34,11 @@ func run(p *pargs) (err error) {
 
 	err = c1.Start()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	err = c2.Start()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	go func() {
@@ -69,27 +69,21 @@ loop:
 
 		case p := <-done:
 			if !p.Success() {
-				return fmt.Errorf(strings.TrimRight(sshErr.String(), "\n\r"))
+				return 0, fmt.Errorf(strings.TrimRight(sshErr.String(), "\n\r"))
 			}
 			break loop
 
 		case <-graceEnd:
 			c2.Process.Kill()
-			return fmt.Errorf("ssh: timeout")
+			return 0, fmt.Errorf("ssh: timeout")
 		}
 	}
 
 	m := rxBps.FindStringSubmatch(diag.String())
 	if len(m) < 2 {
-		return errNoBps
+		return 0, errNoBps
 	}
-	x, err := strconv.Atoi(m[1])
-	if err != nil {
-		return err
-	}
-	fmt.Println("KBps:", x/1024)
-
-	return nil
+	return strconv.ParseInt(m[1], 10, 64)
 }
 
 var (
@@ -118,10 +112,11 @@ func main() {
 		die(2, err)
 	}
 
-	err = run(&p)
+	x, err := run(&p)
 	if err != nil {
 		die(1, err)
 	}
+	fmt.Println("KBps:", x/1024)
 }
 
 func die(exitcode int, err error) {
