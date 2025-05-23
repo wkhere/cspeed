@@ -8,8 +8,8 @@ import (
 )
 
 type pargs struct {
-	host string
-	dt   time.Duration
+	hosts []string
+	dt    time.Duration
 
 	help func()
 }
@@ -17,7 +17,7 @@ type pargs struct {
 func defaults() pargs { return pargs{dt: 5 * time.Second} }
 
 func parseArgs(args []string) (a pargs, err error) {
-	const usage = "usage: cspeed [-dDT|--duration=DT] HOST"
+	const usage = "usage: cspeed [-dDT|--duration=DT] HOST [HOSTn...]"
 
 	a = defaults()
 
@@ -51,10 +51,10 @@ flags:
 		return a, p.err
 	}
 
-	if len(rest) != 1 {
-		return a, fmt.Errorf("expecting HOST arg")
+	if len(rest) < 1 {
+		return a, fmt.Errorf("expecting at least one HOST arg")
 	}
-	a.host = rest[0]
+	a.hosts = rest
 	return a, nil
 }
 
@@ -63,21 +63,29 @@ func main() {
 
 	a, err := parseArgs(os.Args[1:])
 	if err != nil {
-		die(2, err)
+		log.Println(err)
+		os.Exit(2)
 	}
 	if a.help != nil {
 		a.help()
 		os.Exit(0)
 	}
 
-	x, err := sshSend(a.host, a.dt)
-	if err != nil {
-		die(1, err)
-	}
-	fmt.Println(x/1024, "KBps")
-}
+	var hadErr bool
+	for _, host := range a.hosts {
 
-func die(exitcode int, err error) {
-	log.Println(err)
-	os.Exit(exitcode)
+		x, err := sshSend(host, a.dt)
+		if err != nil {
+			hadErr = true
+			log.Printf("%s: %s", host, err)
+			continue
+		}
+		fmt.Printf("%s: %d KBps\n", host, x/1024)
+
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	if hadErr {
+		os.Exit(1)
+	}
 }
