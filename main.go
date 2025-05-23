@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -17,62 +16,61 @@ type pargs struct {
 
 func defaults() pargs { return pargs{dt: 5 * time.Second} }
 
-func parseArgs(args []string) (p pargs, err error) {
-	const usage = "usage: cspeed [-d|--duration=DURATION] HOST"
+func parseArgs(args []string) (a pargs, err error) {
+	const usage = "usage: cspeed [-dDT|--duration=DT] HOST"
 
-	p = defaults()
+	a = defaults()
 
 	rest := make([]string, 0, len(args))
+	var p pstate
+
 flags:
-	for ; len(args) > 0; args = args[1:] {
+	for ; len(args) > 0 && p.err == nil; args = args[1:] {
 		switch arg := args[0]; {
 
-		case strings.HasPrefix(arg, "-d"), strings.HasPrefix(arg, "--duration"):
-			flag, val, ok := strings.Cut(arg, "=")
-			if !ok {
-				return p, fmt.Errorf("expected %s=DURATION", arg)
-			}
-			p.dt, err = time.ParseDuration(val)
-			if err != nil {
-				return p, fmt.Errorf("flag %s: %w", flag, err)
-			}
+		case p.parseDurationFlag(arg, "-d", "--duration", &a.dt):
+			// ok
 
 		case arg == "-h", arg == "--help":
-			p.help = func() { fmt.Println(usage) }
-			return p, nil
+			a.help = func() { fmt.Println(usage) }
+			return a, nil
 
 		case arg == "--":
 			rest = append(rest, args[1:]...)
 			break flags
 
 		case len(arg) > 1 && arg[0] == '-':
-			return p, fmt.Errorf("unknown flag %s", arg)
+			p.errorf("unknown flag %s", arg)
 
 		default:
 			rest = append(rest, arg)
 		}
 	}
 
-	if len(rest) != 1 {
-		return p, fmt.Errorf("expecting HOST arg")
+	if p.err != nil {
+		return a, p.err
 	}
-	p.host = rest[0]
-	return p, nil
+
+	if len(rest) != 1 {
+		return a, fmt.Errorf("expecting HOST arg")
+	}
+	a.host = rest[0]
+	return a, nil
 }
 
 func main() {
 	log.SetFlags(0)
 
-	p, err := parseArgs(os.Args[1:])
+	a, err := parseArgs(os.Args[1:])
 	if err != nil {
 		die(2, err)
 	}
-	if p.help != nil {
-		p.help()
+	if a.help != nil {
+		a.help()
 		os.Exit(0)
 	}
 
-	x, err := sshSend(&p)
+	x, err := sshSend(&a)
 	if err != nil {
 		die(1, err)
 	}
