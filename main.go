@@ -19,7 +19,7 @@ func defaults() pargs { return pargs{dt: 5 * time.Second} }
 func usage() {
 	a := defaults()
 	fmt.Printf(
-		"usage: cspeed [-dDT|--duration=DT (default %[1]s)] HOST [HOSTn...]",
+		"usage: cspeed [-dDT|--duration=DT (default %[1]s)] HOST [HOSTn...]\n",
 		a.dt,
 	)
 }
