@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"io"
 	"os"
 	"os/exec"
 	"regexp"
@@ -16,7 +15,10 @@ func sshSend(host string, dt time.Duration) (nBps int64, err error) {
 	c1 := exec.Command("dd", "if=/dev/urandom")
 	c2 := exec.Command("ssh", host, "cat - >/dev/null")
 
-	pr, pw := io.Pipe()
+	pr, pw, err := os.Pipe()
+	if err != nil {
+		return 0, err
+	}
 	var (
 		diag   = new(strings.Builder)
 		sshErr = new(strings.Builder)
