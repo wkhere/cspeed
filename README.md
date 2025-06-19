@@ -11,7 +11,7 @@ cspeed [-dDT|--duration=DT (default 5s)] HOST [HOSTn...]
 example:
 
 ```shell
-% cspeed host1 host2                                                                                                            130
+% cspeed host1 host2
 host1: 7670 KBps
 host2: 9831 KBps
 ```
