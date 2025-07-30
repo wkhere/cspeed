@@ -41,11 +41,10 @@ func sshSend(host string, dt time.Duration) (nBps int64, err error) {
 		pw.Close()
 	}()
 
-	done := make(chan *os.ProcessState)
+	done := make(chan error)
 
 	go func() {
-		c2.Wait()
-		done <- c2.ProcessState
+		done <- c2.Wait()
 		close(done)
 	}()
 
@@ -62,8 +61,8 @@ loop:
 				close(graceEnd)
 			})
 
-		case p := <-done:
-			if !p.Success() {
+		case err := <-done:
+			if err != nil {
 				// todo: handle case of ssh external kill (sshErr is empty then)
 				return 0, errSSHProc{strings.TrimRight(sshErr.String(), "\n\r")}
 			}
