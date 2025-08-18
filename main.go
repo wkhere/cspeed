@@ -29,6 +29,7 @@ func usage() {
 func parseArgs(args []string) (a pargs, err error) {
 	a = defaults()
 
+	var rest []string
 	var p argp.PState
 flags:
 	for ; len(args) > 0 && p.Err == nil; args = args[1:] {
@@ -42,14 +43,14 @@ flags:
 			return a, nil
 
 		case arg == "--":
-			p.Rest = append(p.Rest, args[1:]...)
+			rest = append(rest, args[1:]...)
 			break flags
 
 		case len(arg) > 1 && arg[0] == '-':
 			p.Errorf("unknown flag %s", arg)
 
 		default:
-			p.Rest = append(p.Rest, arg)
+			rest = append(rest, arg)
 		}
 	}
 
@@ -57,10 +58,10 @@ flags:
 	case p.Err != nil:
 		return a, p.Err
 
-	case len(p.Rest) < 1:
+	case len(rest) < 1:
 		return a, fmt.Errorf("expecting at least one HOST arg")
 	}
-	a.hosts = p.Rest
+	a.hosts = rest
 	return a, nil
 }
 
