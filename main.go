@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"time"
+
+	"gitlab.com/wkhere/argp"
 )
 
 type pargs struct {
@@ -27,40 +29,38 @@ func usage() {
 func parseArgs(args []string) (a pargs, err error) {
 	a = defaults()
 
-	rest := make([]string, 0, len(args))
-	var p pstate
-
+	var p argp.PState
 flags:
-	for ; len(args) > 0 && p.err == nil; args = args[1:] {
+	for ; len(args) > 0 && p.Err == nil; args = args[1:] {
 		switch arg := args[0]; {
 
-		case p.parseDurationFlag(arg, "-d", "--duration", &a.dt):
-			// ok
+		case p.IsFlagExpr(arg, "-d", "--duration"):
+			p.ParseDuration(&a.dt)
 
 		case arg == "-h", arg == "--help":
 			a.help = usage
 			return a, nil
 
 		case arg == "--":
-			rest = append(rest, args[1:]...)
+			p.Rest = append(p.Rest, args[1:]...)
 			break flags
 
 		case len(arg) > 1 && arg[0] == '-':
-			p.errorf("unknown flag %s", arg)
+			p.Errorf("unknown flag %s", arg)
 
 		default:
-			rest = append(rest, arg)
+			p.Rest = append(p.Rest, arg)
 		}
 	}
 
-	if p.err != nil {
-		return a, p.err
-	}
+	switch {
+	case p.Err != nil:
+		return a, p.Err
 
-	if len(rest) < 1 {
+	case len(p.Rest) < 1:
 		return a, fmt.Errorf("expecting at least one HOST arg")
 	}
-	a.hosts = rest
+	a.hosts = p.Rest
 	return a, nil
 }
 
