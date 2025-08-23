@@ -32,7 +32,7 @@ func parseArgs(args []string) (a pargs, err error) {
 	var rest []string
 	var p argp.PState
 flags:
-	for ; len(args) > 0 && p.Err == nil; args = args[1:] {
+	for ; len(args) > 0; args = args[1:] {
 		switch arg := args[0]; {
 
 		case p.IsFlagExpr(arg, "-d", "--duration"):
