@@ -63,8 +63,12 @@ loop:
 
 		case err := <-done:
 			if err != nil {
-				// todo: handle case of ssh external kill (sshErr is empty then)
-				return 0, errSSHProc{strings.TrimRight(sshErr.String(), "\n\r")}
+				s := strings.TrimRight(sshErr.String(), "\n\r")
+				if s == "" {
+					// happens eg after ssh external kill
+					s = "(unknown)"
+				}
+				return 0, errSSHProc{s}
 			}
 			break loop
 
@@ -90,4 +94,4 @@ var (
 
 type errSSHProc struct{ string }
 
-func (e errSSHProc) Error() string { return e.string }
+func (e errSSHProc) Error() string { return "ssh error: " + e.string }
