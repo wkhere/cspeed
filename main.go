@@ -78,16 +78,47 @@ func main() {
 		os.Exit(0)
 	}
 
+	var maxHostLen int
+	for _, host := range a.hosts {
+		maxHostLen = max(maxHostLen, len(host))
+	}
+	printHeader := func(host string) { fmt.Printf("\r%-*s\t", maxHostLen+1, host+":") }
+
 	var hadErr bool
 	for _, host := range a.hosts {
+		printHeader(host)
+
+		done := make(chan struct{})
+		sync := make(chan struct{})
+
+		go func() {
+			t0 := time.Now()
+			ticker := time.NewTicker(time.Second)
+			for {
+				select {
+				case t1 := <-ticker.C:
+					printHeader(host)
+					fmt.Printf("%5s  ", t1.Sub(t0).Truncate(time.Second))
+				case <-done:
+					close(sync)
+					return
+				}
+			}
+		}()
 
 		x, err := sshSend(host, a.dt)
+		close(done)
+		<-sync
+
 		if err != nil {
 			hadErr = true
+			fmt.Println()
 			log.Printf("%s: %s", host, err)
 			continue
 		}
-		fmt.Printf("%s: %d KBps\n", host, x/1024)
+
+		printHeader(host)
+		fmt.Printf("%4d KBps   \n", x/1024)
 
 		time.Sleep(100 * time.Millisecond)
 	}
