@@ -88,8 +88,7 @@ func main() {
 	for _, host := range a.hosts {
 		printHeader(host)
 
-		done := make(chan struct{})
-		sync := make(chan struct{})
+		stop := make(chan struct{})
 
 		go func() {
 			t0 := time.Now()
@@ -99,16 +98,14 @@ func main() {
 				case t1 := <-ticker.C:
 					printHeader(host)
 					fmt.Printf("%5s  ", t1.Sub(t0).Truncate(time.Second))
-				case <-done:
-					close(sync)
+				case <-stop:
 					return
 				}
 			}
 		}()
 
 		x, err := sshSend(host, a.dt)
-		close(done)
-		<-sync
+		stop <- struct{}{}
 
 		if err != nil {
 			hadErr = true
