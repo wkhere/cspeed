@@ -30,12 +30,13 @@ func parseArgs(args []string) (a pargs, err error) {
 	a = defaults()
 
 	var rest []string
-	var p argp.PState
-flags:
-	for ; len(args) > 0; args = args[1:] {
-		switch arg := args[0]; {
+	var p = argp.PState{Args: args}
 
-		case p.IsFlagExpr(arg, "-d", "--duration"):
+flags:
+	for ; len(p.Args) > 0; p.Next() {
+		switch arg := p.Arg(); {
+
+		case p.MatchFlagExpr("-d", "--duration"):
 			p.ParseDuration(&a.dt)
 
 		case arg == "-h", arg == "--help":
@@ -43,7 +44,7 @@ flags:
 			return a, nil
 
 		case arg == "--":
-			rest = append(rest, args[1:]...)
+			rest = append(rest, p.Args[1:]...)
 			break flags
 
 		case len(arg) > 1 && arg[0] == '-':
